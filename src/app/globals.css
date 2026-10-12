@@ -89,3 +89,69 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #94A3B8;
 }
+
+/* Infinite marquee animations for sideways moving testimonials */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-scroll-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 50s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-normal {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-fast {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 22s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-reverse-normal {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-reverse 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-reverse-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-reverse 50s linear infinite;
+  will-change: transform;
+}
+
+.marquee-pause:hover,
+.marquee-paused {
+  animation-play-state: paused !important;
+}
+
+/* Gradient fade masks for carousel edges */
+.mask-gradient-x {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+

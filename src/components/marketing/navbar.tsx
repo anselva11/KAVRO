@@ -26,6 +26,10 @@ export function Navbar() {
             <Link href="/#capabilities" className="hover:text-slate-200 transition-colors">
               Platform
             </Link>
+            <Link href="/testimonials" className="hover:text-slate-200 transition-colors flex items-center gap-1 text-slate-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              Testimonials
+            </Link>
             <Link href="/pricing" className="hover:text-slate-200 transition-colors">
               Pricing
             </Link>
@@ -84,6 +88,13 @@ export function Navbar() {
               className="px-2 py-2 rounded hover:bg-slate-800"
             >
               Platform
+            </Link>
+            <Link
+              href="/testimonials"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-2 py-2 rounded hover:bg-slate-800 text-blue-400 font-semibold"
+            >
+              Testimonials
             </Link>
             <Link
               href="/pricing"

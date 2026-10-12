@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TestimonialsMarquee } from "@/components/marketing/testimonials-marquee";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<"memo" | "cohorts" | "proposal">("memo");
@@ -445,7 +446,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. CALL TO ACTION */}
+      {/* 5. SIDEWAYS MOVING TESTIMONIALS SECTION */}
+      <section className="pt-16 pb-6 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/25 bg-blue-950/30 text-blue-300 text-xs font-mono mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+            Suara Para Operator & Pemimpin
+          </div>
+          <h3 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
+            Dipercaya oleh Tim Berkinerja Tinggi
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto mt-2">
+            Sorotan testimoni bergerak secara otomatis kesamping. Sentuh atau arahkan kursor untuk menjeda kartu.
+          </p>
+        </div>
+
+        <TestimonialsMarquee />
+
+        <div className="pt-2">
+          <Link
+            href="/testimonials"
+            className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium hover:underline"
+          >
+            Lihat semua cerita sukses dan bagikan ulasan Anda <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* 6. CALL TO ACTION */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-b from-blue-950/30 to-slate-950/80 p-8 sm:p-12 text-center space-y-6 shadow-xl">
           <h3 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">

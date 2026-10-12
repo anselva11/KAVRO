@@ -46,6 +46,7 @@ export function Footer() {
               Company
             </h4>
             <ul className="space-y-2 text-xs">
+              <li><Link href="/testimonials" className="hover:text-slate-200 transition-colors text-blue-400">User Testimonials</Link></li>
               <li><Link href="/about" className="hover:text-slate-200 transition-colors">Architecture</Link></li>
               <li><Link href="/pricing" className="hover:text-slate-200 transition-colors">Commercial Plans</Link></li>
               <li><Link href="/contact" className="hover:text-slate-200 transition-colors">Enterprise Sales</Link></li>
