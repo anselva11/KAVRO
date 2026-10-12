@@ -9,8 +9,8 @@ export class MockAIProvider implements AIProvider {
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content || "";
     const inputTokens = countChatTokens(messages, options?.systemPrompt);
 
-    // Realistic brief simulated delay (300ms)
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Minimal realistic delay (150ms) — fast enough to not feel laggy
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     let responseContent = "";
     const lower = lastUserMessage.toLowerCase();
@@ -94,7 +94,7 @@ Thank you for your inquiry: **"${lastUserMessage.slice(0, 80)}${lastUserMessage.
   }
 
   async generateDocument(options: DocumentGenerationOptions): Promise<DocumentGenerationResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     const { templateType, topic, keyPoints, audience, tone } = options;
     let title = "";

@@ -1,7 +1,22 @@
-import { AIProvider, ChatMessage, ChatOptions, ChatCompletionResponse, DocumentGenerationOptions, DocumentGenerationResponse } from "@/types/ai";
+import {
+  AIProvider,
+  ChatMessage,
+  ChatOptions,
+  ChatCompletionResponse,
+  DocumentGenerationOptions,
+  DocumentGenerationResponse,
+} from "@/types/ai";
 import { SYSTEM_PROMPTS } from "./prompts";
 import { countChatTokens } from "./token-counter";
 import { estimateTokens } from "../utils";
+
+const DOCUMENT_SYSTEM_PROMPTS: Record<string, string> = {
+  email: SYSTEM_PROMPTS.EMAIL_GENERATOR,
+  proposal: SYSTEM_PROMPTS.PROPOSAL_GENERATOR,
+  report: SYSTEM_PROMPTS.REPORT_GENERATOR,
+  meeting: SYSTEM_PROMPTS.MEETING_GENERATOR,
+  plan: SYSTEM_PROMPTS.PLAN_GENERATOR,
+};
 
 export class GeminiProvider implements AIProvider {
   name = "gemini" as const;
@@ -9,7 +24,7 @@ export class GeminiProvider implements AIProvider {
   private defaultModel: string;
   private timeoutMs: number;
 
-  constructor(apiKey: string, defaultModel = "gemini-1.5-flash", timeoutMs = 30000) {
+  constructor(apiKey: string, defaultModel = "gemini-1.5-flash", timeoutMs = 45000) {
     this.apiKey = apiKey;
     this.defaultModel = defaultModel;
     this.timeoutMs = timeoutMs;
@@ -52,8 +67,10 @@ export class GeminiProvider implements AIProvider {
 
       const data = await res.json();
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const inputTokens = countChatTokens(messages, systemPrompt);
-      const outputTokens = estimateTokens(content);
+      const inputTokens =
+        data.usageMetadata?.promptTokenCount ?? countChatTokens(messages, systemPrompt);
+      const outputTokens =
+        data.usageMetadata?.candidatesTokenCount ?? estimateTokens(content);
 
       return {
         content,
@@ -69,40 +86,17 @@ export class GeminiProvider implements AIProvider {
   }
 
   async generateDocument(options: DocumentGenerationOptions): Promise<DocumentGenerationResponse> {
-    let systemPrompt = SYSTEM_PROMPTS.ASSISTANT;
-    switch (options.templateType) {
-      case "email":
-        systemPrompt = SYSTEM_PROMPTS.EMAIL_GENERATOR;
-        break;
-      case "proposal":
-        systemPrompt = SYSTEM_PROMPTS.PROPOSAL_GENERATOR;
-        break;
-      case "report":
-        systemPrompt = SYSTEM_PROMPTS.REPORT_GENERATOR;
-        break;
-      case "meeting":
-        systemPrompt = SYSTEM_PROMPTS.MEETING_GENERATOR;
-        break;
-      case "plan":
-        systemPrompt = SYSTEM_PROMPTS.PLAN_GENERATOR;
-        break;
-    }
+    const systemPrompt = DOCUMENT_SYSTEM_PROMPTS[options.templateType] ?? SYSTEM_PROMPTS.ASSISTANT;
+    const userPrompt = buildDocumentPrompt(options);
 
-    const userPrompt = `Template: ${options.templateType}
-Topic: ${options.topic}
-Target Audience: ${options.audience || "General Business"}
-Tone: ${options.tone || "Professional"}
-Key Points:
-${options.keyPoints.map((p) => `- ${p}`).join("\n")}
-${options.customInstructions ? `Additional Instructions: ${options.customInstructions}` : ""}`;
-
-    const completion = await this.chat(
-      [{ role: "user", content: userPrompt }],
-      { systemPrompt, temperature: 0.5, maxTokens: 3000 }
-    );
+    const completion = await this.chat([{ role: "user", content: userPrompt }], {
+      systemPrompt,
+      temperature: 0.4,
+      maxTokens: 3500,
+    });
 
     return {
-      title: `${options.templateType.toUpperCase()}: ${options.topic}`,
+      title: buildDocumentTitle(options),
       content: completion.content,
       templateType: options.templateType,
       provider: "gemini",
@@ -111,4 +105,21 @@ ${options.customInstructions ? `Additional Instructions: ${options.customInstruc
       outputTokens: completion.outputTokens,
     };
   }
+}
+
+function buildDocumentPrompt(options: DocumentGenerationOptions): string {
+  return [
+    `Template: ${options.templateType}`,
+    `Topic: ${options.topic}`,
+    `Target Audience: ${options.audience || "General Business"}`,
+    `Tone: ${options.tone || "Professional"}`,
+    `Key Points:\n${options.keyPoints.map((p) => `- ${p}`).join("\n")}`,
+    options.customInstructions ? `Additional Instructions: ${options.customInstructions}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function buildDocumentTitle(options: DocumentGenerationOptions): string {
+  return `${options.templateType.toUpperCase()}: ${options.topic}`;
 }

@@ -5,6 +5,21 @@ import { checkUsageQuota, recordUsageEvent } from "@/services/usage-service";
 import { createDocument } from "@/services/document-service";
 import { createClient } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
+export const maxDuration = 90;
+
+async function resolveUserId(): Promise<string> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user?.id ?? "usr-default";
+  } catch {
+    return "usr-default";
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const json = await req.json();
@@ -20,26 +35,14 @@ export async function POST(req: Request) {
     const { templateType, topic, keyPoints, audience, tone, customInstructions } = validation.data;
     let { workspaceId } = validation.data;
 
-    let userId = "usr-default";
-    try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        userId = user.id;
-      }
-    } catch {
-      // Dev fallback
-    }
-
+    const userId = await resolveUserId();
     workspaceId = workspaceId || "ws-default";
 
     // 1. Quota Check
     const quota = await checkUsageQuota(userId, workspaceId);
     if (!quota.allowed) {
       return NextResponse.json(
-        {
-          error: "Monthly AI quota exceeded. Please upgrade your subscription to generate additional documents.",
-        },
+        { error: "Monthly AI quota exceeded. Please upgrade your subscription to generate additional documents." },
         { status: 429 }
       );
     }
@@ -55,32 +58,35 @@ export async function POST(req: Request) {
       customInstructions,
     });
 
-    // 3. Save Document into PostgreSQL
-    const savedDoc = await createDocument({
-      workspaceId,
-      userId,
-      title: result.title,
-      templateType: result.templateType,
-      content: result.content,
-      status: "draft",
-      metadata: {
-        aiGenerated: true,
-        model: result.model,
+    // 3. Save document & record usage event CONCURRENTLY
+    const [savedDoc] = await Promise.all([
+      createDocument({
+        workspaceId,
+        userId,
+        title: result.title,
+        templateType: result.templateType,
+        content: result.content,
+        status: "draft",
+        metadata: {
+          aiGenerated: true,
+          model: result.model,
+          provider: result.provider,
+          topic,
+          tone,
+        },
+      }),
+      // Fire-and-forget usage recording
+      recordUsageEvent({
+        userId,
+        workspaceId,
         provider: result.provider,
-        topic,
-        tone,
-      },
-    });
-
-    // 4. Record Usage Event
-    await recordUsageEvent({
-      userId,
-      workspaceId,
-      provider: result.provider,
-      model: result.model,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-    });
+        model: result.model,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+      }).catch((err) => {
+        console.warn("[generate-document] recordUsageEvent failed silently:", err?.message);
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
@@ -91,7 +97,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: any) {
-    console.error("Document Gen API error:", error);
+    console.error("[generate-document] API error:", error);
     return NextResponse.json(
       { error: error?.message || "Failed to generate document" },
       { status: 500 }

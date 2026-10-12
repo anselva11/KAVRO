@@ -129,11 +129,18 @@ export async function getConversations(userId: string, workspaceId?: string): Pr
 export async function getConversationWithMessages(conversationId: string) {
   try {
     const supabase = await createClient();
-    const { data: conv, error: convError } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("id", conversationId)
-      .single();
+
+    // Fetch conversation + messages in parallel
+    const [convResult, msgsResult] = await Promise.all([
+      supabase.from("conversations").select("*").eq("id", conversationId).single(),
+      supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const { data: conv, error: convError } = convResult;
 
     if (convError || !conv) {
       const fallbackConv = mockConversations.find((c) => c.id === conversationId);
@@ -152,16 +159,11 @@ export async function getConversationWithMessages(conversationId: string) {
     }
 
     const convRow = conv as unknown as ConversationRow;
-
-    const { data: msgs } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
+    const msgs = msgsResult.data || [];
 
     return {
       conversation: mapConversationRow(convRow),
-      messages: ((msgs || []) as unknown as MessageRow[]).map(mapMessageRow),
+      messages: (msgs as unknown as MessageRow[]).map(mapMessageRow),
     };
   } catch {
     const fallbackConv = mockConversations.find((c) => c.id === conversationId);
@@ -231,29 +233,33 @@ export async function saveMessage(params: {
 
   try {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: params.conversationId,
-        user_id: params.userId,
-        role: params.role,
-        content: params.content,
-        model: params.model,
-        input_tokens: params.inputTokens ?? 0,
-        output_tokens: params.outputTokens ?? 0,
-      })
-      .select()
-      .single();
 
-    if (data) {
-      const row = data as unknown as MessageRow;
+    // Save message and touch conversation updated_at in parallel
+    const [msgResult] = await Promise.all([
+      supabase
+        .from("messages")
+        .insert({
+          conversation_id: params.conversationId,
+          user_id: params.userId,
+          role: params.role,
+          content: params.content,
+          model: params.model,
+          input_tokens: params.inputTokens ?? 0,
+          output_tokens: params.outputTokens ?? 0,
+        })
+        .select()
+        .single(),
+      // Non-blocking touch of updated_at (wrapped in Promise.resolve for TS compatibility)
+      Promise.resolve(
+        supabase
+          .from("conversations")
+          .update({ updated_at: now })
+          .eq("id", params.conversationId)
+      ).catch(() => {}),
+    ]);
 
-      // Touch conversation updated_at
-      await supabase
-        .from("conversations")
-        .update({ updated_at: now })
-        .eq("id", params.conversationId);
-
+    if (msgResult.data) {
+      const row = msgResult.data as unknown as MessageRow;
       return mapMessageRow(row);
     }
   } catch {
