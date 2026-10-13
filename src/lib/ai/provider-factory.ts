@@ -13,21 +13,26 @@ export function getAIProvider(): AIProvider {
     return defaultProviderInstance;
   }
 
-  const providerType = (process.env.AI_PROVIDER || "mock").toLowerCase() as SupportedAIProvider;
-  const apiKey = process.env.AI_PROVIDER_API_KEY;
+  const rawProvider = (process.env.AI_PROVIDER || "").toLowerCase();
+  const openAiKey = process.env.AI_PROVIDER_API_KEY || process.env.OPENAI_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || (rawProvider === "gemini" ? process.env.AI_PROVIDER_API_KEY : undefined);
+  const anthropicKey = process.env.ANTHROPIC_API_KEY || (rawProvider === "anthropic" ? process.env.AI_PROVIDER_API_KEY : undefined);
+
   const model = process.env.AI_MODEL;
+  const timeoutMs = Number(process.env.AI_TIMEOUT_MS) || 60000;
 
-  // Generous timeout for long-form document generation (90s) vs chat (45s)
-  const timeoutMs = Number(process.env.AI_TIMEOUT_MS) || 45000;
-
-  if (providerType === "openai" && apiKey) {
-    defaultProviderInstance = new OpenAIProvider(apiKey, model || "gpt-4o-mini", timeoutMs);
-  } else if (providerType === "gemini" && apiKey) {
-    defaultProviderInstance = new GeminiProvider(apiKey, model || "gemini-1.5-flash", timeoutMs);
-  } else if (providerType === "anthropic" && apiKey) {
-    defaultProviderInstance = new AnthropicProvider(apiKey, model || "claude-3-5-sonnet-20241022", timeoutMs);
+  // Resolve provider with priority: explicit provider setting -> available keys -> mock
+  if ((rawProvider === "openai" || (!rawProvider && openAiKey)) && openAiKey) {
+    defaultProviderInstance = new OpenAIProvider(openAiKey, model || "gpt-4o-mini", timeoutMs);
+  } else if (rawProvider === "gemini" && geminiKey) {
+    defaultProviderInstance = new GeminiProvider(geminiKey, model || "gemini-1.5-flash", timeoutMs);
+  } else if (rawProvider === "anthropic" && anthropicKey) {
+    defaultProviderInstance = new AnthropicProvider(anthropicKey, model || "claude-3-5-sonnet-20241022", timeoutMs);
+  } else if (openAiKey) {
+    // If any OpenAI key is present, default to OpenAI as requested
+    defaultProviderInstance = new OpenAIProvider(openAiKey, model || "gpt-4o-mini", timeoutMs);
   } else {
-    // Robust zero-dependency mock provider for demo / development
+    // Zero-dependency mock provider for preview & offline development
     defaultProviderInstance = new MockAIProvider();
   }
 

@@ -15,7 +15,52 @@ export class MockAIProvider implements AIProvider {
     let responseContent = "";
     const lower = lastUserMessage.toLowerCase();
 
-    if (lower.includes("pricing") || lower.includes("price") || lower.includes("cost")) {
+    if (
+      lower.includes("halo") ||
+      lower.includes("hai") ||
+      lower.includes("hello") ||
+      lower.includes("hi ") ||
+      lower === "hi" ||
+      lower.includes("selamat") ||
+      lower.includes("nama saya") ||
+      lower.includes("saya hansel") ||
+      lower.includes("hansel")
+    ) {
+      // Extract user's name if mentioned
+      const nameMatch = lastUserMessage.match(/(?:nama saya|saya)\s+([a-zA-Z\s]+)/i);
+      const greetingName = nameMatch ? nameMatch[1].trim() : "Operator";
+
+      responseContent = `### Halo ${greetingName}! 👋
+
+Selamat datang di **KAVRO AI Business Workspace** — platform AI multi-fitur untuk eksekutif, founder SaaS, dan tim profesional.
+
+Saya siap membantu Anda dalam:
+1. 💼 **AI Business Assistant & Strategy**: Perumusan strategi GTM, pricing model, ICP, dan unit economics (CAC, LTV, MRR).
+2. 📄 **Document Generator Studio**: Pembuatan proposal bisnis, draft kontrak MSA, executive report, dan email korporat.
+3. 📊 **Data & Spreadsheets Analysis**: Analisis statistik CSV/data finansial, deteksi anomali churn, dan insight pertumbuhan.
+4. ⚡ **Automated Business Workflows**: Otomasi pipeline operasional dan synthesis notulensi meeting.
+
+Apa yang ingin kita kerjakan atau diskusikan hari ini?`;
+    } else if (lower.includes("bisnis") || lower.includes("strategi") || lower.includes("saas") || lower.includes("growth")) {
+      responseContent = `### Rencana Strategis & Pertumbuhan SaaS KAVRO
+
+Berdasarkan analisis model bisnis dan kebutuhan operasional:
+
+#### 1. Optimalisasi Unit Economics
+- **Customer Acquisition Cost (CAC)**: Fokus pada inbound marketing berbasis edukasi dan referral pengguna aktif untuk menekan payback period di bawah 12 bulan.
+- **Net Revenue Retention (NRR)**: Terapkan ekspansi kursi (seats) dan add-on fitur otomasi untuk meningkatkan ekspansi MRR organik.
+
+#### 2. Matriks Prioritas Eksekusi
+| Inisiatif | Estimasi Dampak | Tingkat Kompleksitas | Target Waktu |
+| :--- | :--- | :--- | :--- |
+| Self-serve Tier Onboarding | Tinggi | Menengah | 2 Minggu |
+| Enterprise Custom Governance | Sangat Tinggi | Tinggi | 4 Minggu |
+| AI Document Pipeline Automation | Tinggi | Rendah | 1 Minggu |
+
+#### 3. Rekomendasi Langkah Selanjutnya
+- Buat proposal penawaran khusus untuk early adopter.
+- Pantau churn cohort bulanan pada dashboard analitik.`;
+    } else if (lower.includes("pricing") || lower.includes("price") || lower.includes("cost") || lower.includes("harga")) {
       responseContent = `### Strategic Pricing Framework & Recommendations
 
 Based on your inquiry, here is a structured evaluation of the monetization options:
