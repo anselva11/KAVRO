@@ -6,8 +6,8 @@ export const chatMessageSchema = z.object({
 });
 
 export const chatRequestSchema = z.object({
-  conversationId: z.string().uuid("Invalid conversation ID").optional(),
-  workspaceId: z.string().uuid("Invalid workspace ID").optional(),
+  conversationId: z.string().min(1, "Conversation ID cannot be empty").optional(),
+  workspaceId: z.string().min(1, "Workspace ID cannot be empty").optional(),
   messages: z.array(chatMessageSchema).min(1, "At least one message is required"),
   model: z.string().max(50).optional(),
 });
@@ -15,7 +15,7 @@ export const chatRequestSchema = z.object({
 export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 
 export const generateDocumentSchema = z.object({
-  workspaceId: z.string().uuid("Invalid workspace ID").optional(),
+  workspaceId: z.string().min(1, "Workspace ID cannot be empty").optional(),
   templateType: z.enum(["email", "proposal", "report", "meeting", "plan"]),
   topic: z.string().min(3, "Topic must be at least 3 characters").max(200),
   keyPoints: z.array(z.string()).min(1, "Provide at least one key point"),

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createDocumentSchema = z.object({
-  workspaceId: z.string().uuid("Invalid workspace ID"),
+  workspaceId: z.string().min(1, "Workspace ID cannot be empty"),
   title: z.string().min(1, "Title is required").max(150),
   templateType: z.string().default("custom"),
   content: z.string().default(""),
